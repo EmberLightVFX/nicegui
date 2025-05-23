@@ -71,26 +71,104 @@ class Sortable(Element,
         # When the order of objects have changed, synchronize
         self.on('order_updated', self._synchronize_order)
 
-        # Add handlers for cross-container operations
-        self.on('sort_add', self._handle_cross_container_add)
+        self._sort_end_handlers = [on_end] if on_end else []
+        self._sort_add_handlers = [on_add] if on_add else []
+        self._sort_change_handlers = [on_sort] if on_sort else []
+        self._sort_move_handlers = [on_move] if on_move else []
+        self._sort_filter_handlers = [on_filter] if on_filter else []
+        self._sort_spill_handlers = [on_spill] if on_spill else []
+        self._sort_select_handlers = [on_select] if on_select else []
+        self._sort_deselect_handlers = [on_deselect] if on_deselect else []
 
-        # Set up event handlers
-        if on_end:
-            self.on('sort_end', lambda e: handle_event(on_end, e))
-        if on_add:
-            self.on('sort_add', lambda e: handle_event(on_add, e))
-        if on_sort:
-            self.on('sort_change', lambda e: handle_event(on_sort, e))
-        if on_move:
-            self.on('sort_move', lambda e: handle_event(on_move, e))
-        if on_filter:
-            self.on('sort_filter', lambda e: handle_event(on_filter, e))
-        if on_spill:
-            self.on('sort_spill', lambda e: handle_event(on_spill, e))
-        if on_select:
-            self.on('sort_select', lambda e: handle_event(on_select, e))
-        if on_deselect:
-            self.on('sort_deselect', lambda e: handle_event(on_deselect, e))
+        self._sort_add_handlers.insert(0, self._handle_cross_container_add)
+
+        def handle_sort_end(e: GenericEventArguments) -> None:
+            """Handle the end of a sort operation."""
+            for handler in self._sort_end_handlers:
+                handle_event(handler, e)
+        self.on('sort_end', handle_sort_end)
+
+        def handle_sort_add(e: GenericEventArguments) -> None:
+            """Handle an element being added to the sortable."""
+            for handler in self._sort_add_handlers:
+                handle_event(handler, e)
+        self.on('sort_add', handle_sort_add)
+
+        def handle_sort_change(e: GenericEventArguments) -> None:
+            """Handle a change in the order of the sortable."""
+            for handler in self._sort_change_handlers:
+                handle_event(handler, e)
+        self.on('sort_change', handle_sort_change)
+
+        def handle_sort_move(e: GenericEventArguments) -> None:
+            """Handle an item being moved within the sortable."""
+            for handler in self._sort_move_handlers:
+                handle_event(handler, e)
+        self.on('sort_move', handle_sort_move)
+
+        def handle_sort_filter(e: GenericEventArguments) -> None:
+            """Handle a filter event."""
+            for handler in self._sort_filter_handlers:
+                handle_event(handler, e)
+        self.on('sort_filter', handle_sort_filter)
+
+        def handle_sort_spill(e: GenericEventArguments) -> None:
+            """Handle an item being spilled outside the sortable."""
+            for handler in self._sort_spill_handlers:
+                handle_event(handler, e)
+        self.on('sort_spill', handle_sort_spill)
+
+        def handle_sort_select(e: GenericEventArguments) -> None:
+            """Handle an item being selected (MultiDrag)."""
+            for handler in self._sort_select_handlers:
+                handle_event(handler, e)
+        self.on('sort_select', handle_sort_select)
+
+        def handle_sort_deselect(e: GenericEventArguments) -> None:
+            """Handle an item being deselected (MultiDrag)."""
+            for handler in self._sort_deselect_handlers:
+                handle_event(handler, e)
+        self.on('sort_deselect', handle_sort_deselect)
+
+    def on_end(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when the sorting ends."""
+        self._sort_end_handlers.append(callback)
+        return self
+
+    def on_add(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when an element is added."""
+        self._sort_add_handlers.append(callback)
+        return self
+
+    def on_sort(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when the order changes."""
+        self._sort_change_handlers.append(callback)
+        return self
+
+    def on_move(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when an item is moved."""
+        self._sort_move_handlers.append(callback)
+        return self
+
+    def on_filter(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when an item is filtered."""
+        self._sort_filter_handlers.append(callback)
+        return self
+
+    def on_spill(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when an item is spilled."""
+        self._sort_spill_handlers.append(callback)
+        return self
+
+    def on_select(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when an item is selected (MultiDrag)."""
+        self._sort_select_handlers.append(callback)
+        return self
+
+    def on_deselect(self, callback: Handler[GenericEventArguments]) -> Sortable:
+        """Add a callback to be invoked when an item is deselected (MultiDrag)."""
+        self._sort_deselect_handlers.append(callback)
+        return self
 
     def _handle_cross_container_add(self, e: GenericEventArguments) -> None:
         """Handle an element being added from another sortable container."""
