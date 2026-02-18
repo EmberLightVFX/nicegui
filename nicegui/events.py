@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import nullcontext
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
 from . import background_tasks, core, helpers
 from .awaitable_response import AwaitableResponse
@@ -51,16 +51,27 @@ class SlideEventArguments(UiEventArguments):
 
 
 @dataclass(**KWONLY_SLOTS)
+class EChartComponentClickEventArguments(UiEventArguments):
+    component_type: str
+    name: str | None
+
+
+@dataclass(**KWONLY_SLOTS)
 class EChartPointClickEventArguments(UiEventArguments):
     component_type: str
+    name: str
     series_type: str
     series_index: int
     series_name: str
-    name: str
     data_index: int
     data: float | int | str
-    data_type: str
+    data_type: str | None
     value: float | int | list
+
+
+@dataclass(**KWONLY_SLOTS)
+class MermaidNodeClickEventArguments(UiEventArguments):
+    node_id: str
 
 
 @dataclass(**KWONLY_SLOTS)
@@ -407,7 +418,7 @@ class XtermDataEventArguments(UiEventArguments):
 
 
 EventT = TypeVar('EventT', bound=EventArguments)
-Handler = Union[Callable[[EventT], Any], Callable[[], Any]]
+Handler: TypeAlias = Callable[[EventT], Any] | Callable[[], Any]
 
 
 def handle_event(handler: Handler[EventT] | None, arguments: EventT) -> None:

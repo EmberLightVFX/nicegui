@@ -1,17 +1,19 @@
 import asyncio
 import logging
 import traceback
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
+from contextlib import suppress
 from functools import partial
 from pickle import PicklingError
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 from typing_extensions import ParamSpec
 
 from . import core, helpers
 
-process_pool: Optional[ProcessPoolExecutor] = None
+process_pool: ProcessPoolExecutor | None = None
 thread_pool = ThreadPoolExecutor()
 
 P = ParamSpec('P')
@@ -85,7 +87,9 @@ async def cpu_bound(callback: Callable[P, R], *args: P.args, **kwargs: P.kwargs)
     try:
         return await _run(process_pool, safe_callback, callback, *args, **kwargs)
     except PicklingError as e:
-        raise RuntimeError('Unable to run CPU-bound in script mode. Use a `@ui.page` function instead.') from e
+        if core.script_mode:
+            raise RuntimeError('Unable to run CPU-bound in script mode. Use a `@ui.page` function instead.') from e
+        raise e
     except BrokenProcessPool as e:
         try:
             await _run(process_pool, safe_callback, lambda: None)
@@ -105,17 +109,13 @@ def reset() -> None:
     global process_pool, thread_pool  # pylint: disable=global-statement # noqa: PLW0603
 
     if process_pool is not None:
-        try:
+        with suppress(Exception):
             _kill_processes()
             process_pool.shutdown(wait=False, cancel_futures=True)
-        except Exception:  # pylint: disable=broad-except
-            pass
         process_pool = None
 
-    try:
+    with suppress(Exception):
         thread_pool.shutdown(wait=False, cancel_futures=True)
-    except Exception:  # pylint: disable=broad-except
-        pass
     thread_pool = ThreadPoolExecutor()
 
 

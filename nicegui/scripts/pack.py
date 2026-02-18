@@ -3,6 +3,7 @@ import argparse
 import os
 import platform
 import subprocess
+from contextlib import suppress
 from pathlib import Path
 
 import nicegui
@@ -49,15 +50,21 @@ def main() -> None:
     parser.add_argument('--icon', type=str, help='Path to an icon file.')
     parser.add_argument('--osx-bundle-identifier', type=str, help='Mac OS .app bundle identifier.')
     parser.add_argument('--dry-run', action='store_true', help='Dry run.', default=False)
+    parser.add_argument('--clean', action='store_true', default=False, help=(
+        'Clean PyInstaller cache (in ./build folder) and remove temporary files before building.'
+    ))
+    parser.add_argument('--noconfirm', action='store_true', default=False, help=(
+        'Replace output directory (./dist/SPECNAME) without asking for confirmation.'
+    ))
     parser.add_argument('main', default='main.py', help='Main file which calls `ui.run()`.')
     args = parser.parse_args()
 
-    for directory in ['build', 'dist']:
-        if Path(directory).exists():
-            Path(directory).rmdir()
-
     command = ['pyinstaller'] if platform.system() == 'Windows' else ['python', '-m', 'PyInstaller']
     command.extend(['--name', args.name])
+    if args.clean:
+        command.append('--clean')
+    if args.noconfirm:
+        command.append('--noconfirm')
     if args.windowed:
         command.append('--windowed')
     if args.onefile:
@@ -71,11 +78,9 @@ def main() -> None:
     if args.osx_bundle_identifier:
         command.extend(['--osx-bundle-identifier', args.osx_bundle_identifier])
 
-    try:
+    with suppress(ImportError):
         import pyecharts  # pylint: disable=import-outside-toplevel
         command.extend(['--add-data', f'{Path(pyecharts.__file__).parent}{os.pathsep}pyecharts'])
-    except ModuleNotFoundError:
-        pass
 
     command.extend([args.main])
 
