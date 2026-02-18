@@ -27,6 +27,24 @@ def main_demo() -> None:
     ui.button('Show parent', on_click=lambda: grid.run_grid_method('setColumnsVisible', ['parent'], True))
 
 
+@doc.demo('Adding rows', '''
+    It's simple to add new rows by updating the `options` property.
+    To scroll to the new row, use the AG Grid API method `ensureIndexVisible`.
+''')
+def adding_rows():
+    import random
+
+    def add():
+        grid.options['rowData'].append({'number': random.randint(0, 100)})
+        grid.run_grid_method('ensureIndexVisible', len(grid.options['rowData']) - 1)
+
+    grid = ui.aggrid({
+        'columnDefs': [{'field': 'number'}],
+        'rowData': [],
+    }).classes('h-52')
+    ui.button('Add row', on_click=add)
+
+
 @doc.demo('Select AG Grid Rows', '''
     You can add checkboxes to grid cells to allow the user to select single or multiple rows.
 
@@ -267,6 +285,33 @@ def aggrid_handle_theme_change():
     })
     ui.toggle(['quartz', 'balham', 'material', 'alpine']) \
         .bind_value(grid, 'theme').props('flat size="sm"')
+
+
+@doc.demo('AG Grid Enterprise', '''
+    You can use AG Grid Enterprise by setting the module source to the Enterprise bundle
+    (either from a CDN or from a self-hosted bundle)
+    and passing `modules='enterprise'` to the `ui.aggrid` constructor.
+
+    Use `ui.aggrid.VERSION` (*since version 3.8.0*) to programmatically reference the AG Grid version used by NiceGUI.
+    This ensures compatibility when building custom CDN URLs.
+
+    *Added in version 3.6.0*
+''')
+def project_code():
+    # bundle_url = f'https://cdn.jsdelivr.net/npm/ag-grid-enterprise@{ui.aggrid.VERSION}/+esm'
+    # ui.aggrid.set_module_source(bundle_url)
+
+    # ui.aggrid({
+    #     'columnDefs': [
+    #         {'field': 'version'},
+    #         {'field': 'description'},
+    #     ],
+    #     'rowData': [
+    #         {'version': 'Community', 'description': 'Free, no license required.'},
+    #         {'version': 'Enterprise', 'description': 'Restricted, free to test locally.'},
+    #     ],
+    # }, modules='enterprise')
+    ui.label('This demo does not run online due to licensing restrictions.')  # HIDE
 
 
 doc.reference(ui.aggrid)

@@ -91,8 +91,7 @@ def test_replace_markdown(screen: Screen):
             ui.markdown('A')
 
         def replace():
-            container.clear()
-            with container:
+            with container.clear():
                 ui.markdown('B')
         ui.button('Replace', on_click=replace)
 
@@ -102,3 +101,13 @@ def test_replace_markdown(screen: Screen):
     screen.click('Replace')
     screen.should_contain('B')
     screen.should_not_contain('A')
+
+
+def test_xss_sanitization(screen: Screen):
+    @ui.page('/')
+    def page():
+        ui.markdown('<img src=x onerror="alert(\'XSS\')">')
+
+    screen.allowed_js_errors.append('/x - Failed to load resource')
+    screen.open('/')
+    assert screen.find_by_tag('img').get_attribute('onerror') is None
